@@ -1,0 +1,47 @@
+# ----------------------------------------
+# Feign client and Hystryx properties
+# ----------------------------------------
+feign:
+  hystrix:
+    enabled: true
+  client:
+    config:
+      amazon:
+        connectTimeout: 10000
+        readTimeout: 10000
+        loggerLevel: FULL
+        service: ${AMAZON_SERVER_URL:https://completion.amazon.com}
+
+hystrix:
+  command:
+    default:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 10000
+
+
+# ----------------------------------------
+# Logging settings
+# ----------------------------------------
+logging:
+  level:
+    com:
+      sellics: DEBUG
+
+
+# ----------------------------------------
+# Management
+# ----------------------------------------
+management:
+  #TODO: delete in production mode
+  trace:
+    http:
+      include: REQUEST_HEADERS, PRINCIPAL, RESPONSE_HEADERS, COOKIE_HEADERS, TIME_TAKEN
+  endpoints:
+    web:
+      exposure:
+        include: httptrace, info, health
+  endpoint:
+    health:
+      show-details: always
