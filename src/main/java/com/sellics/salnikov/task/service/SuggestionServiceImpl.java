@@ -15,6 +15,7 @@ import rx.Observable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -49,12 +50,12 @@ public class SuggestionServiceImpl implements SuggestionService {
         return result;
     }
 
-    private List<HystrixCommand<SuggestionResult>> prepareCommands(final String prefix) {
+    private List<Future<SuggestionResult>> prepareCommands(final String prefix) {
 
-        List<HystrixCommand<SuggestionResult>> commands = new ArrayList<>();
+        List<Future<SuggestionResult>> commands = new ArrayList<>();
         for(int i = 1; i <= prefix.length(); i++) {
             HystrixCommand<SuggestionResult> command = amazonApiClient.getSuggestionResult(MID_VALUE, ALIAS_VALUE, prefix.substring(0, i));
-            commands.add(command);
+            commands.add(command.queue());
         }
 
         return commands;
@@ -66,7 +67,8 @@ public class SuggestionServiceImpl implements SuggestionService {
         //TODO: anton.salnikov - move magic number to config
         Observable.from(prepareCommands(prefix)).take(9, TimeUnit.SECONDS)
                 .subscribe(
-                        s -> results.add(s.execute()),
+
+                        s -> results.add(processFuture(s)),
                         e -> log.error("Error appeared", e),
                         () -> log.debug("Processing of commands is finished. Sent '{}' requests.", results.size())
                 );
@@ -87,5 +89,14 @@ public class SuggestionServiceImpl implements SuggestionService {
                 .count();
 
         return (int) Math.round((double) numberOfMatches/(results.size() * 10) * 100);
+    }
+
+    private static SuggestionResult processFuture(Future<SuggestionResult> future) {
+
+        try {
+            return future.get();
+        } catch (Exception e) {
+            throw new IllegalStateException("Error appeared");
+        }
     }
 }

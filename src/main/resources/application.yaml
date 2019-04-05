@@ -12,7 +12,17 @@ feign:
         loggerLevel: FULL
         service: ${AMAZON_SERVER_URL:https://completion.amazon.com}
 
+#https://github.com/Netflix/Hystrix/wiki/Configuration
 hystrix:
+  threadpool:
+    default:
+      coreSize: 10
+      maximumSize: 10
+      #add extra capacity
+      #This property sets the maximum queue size of the BlockingQueue implementation.
+      #If you set this to -1 (default) then SynchronousQueue will be used, otherwise a positive value will be used with LinkedBlockingQueue
+      maxQueueSize: 10000
+      queueSizeRejectionThreshold: 10000
   command:
     default:
       execution:
